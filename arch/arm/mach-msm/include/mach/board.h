@@ -660,7 +660,7 @@ int  msm_add_sdcc(unsigned int controller,
 struct msm_usb_host_platform_data;
 int  msm_add_host(unsigned int host,
 		struct msm_usb_host_platform_data *plat);
-#if defined(CONFIG_USB_FUNCTION_MSM_HSUSB) || defined(CONFIG_USB_MSM_72K) || defined(CONFIG_USB_MSM_72K_MODULE)    || defined(CONFIG_USB_CI13XXX_MSM)
+#if defined(CONFIG_USB_FUNCTION_MSM_HSUSB) || defined(CONFIG_USB_MSM_72K) || defined(CONFIG_USB_MSM_72K_MODULE) || defined(CONFIG_USB_CI13XXX_MSM) || defined(CONFIG_USB_MSM_72K)
 int usb_get_connect_type(void);
 void msm_otg_set_vbus_state(int online);
 void msm_hsusb_set_vbus_state(int online);

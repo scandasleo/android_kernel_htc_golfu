@@ -57,6 +57,43 @@ enum {
 };
 
 static DEFINE_MUTEX(notify_sem);
+static int carkit_phy_reset(struct otg_transceiver *otg);
+
+int htc_get_accessory_state(void)
+{
+	unsigned n;
+	int ret;
+	struct msm_otg *motg = the_msm_otg;
+
+	pm_runtime_get_sync(motg->otg.dev);
+	ret = carkit_phy_reset(&motg->otg);
+	if (ret) {
+		USBH_INFO("carkit_phy_reset failed ret %d\n",ret);
+		return -1;
+	}
+
+	clk_enable(motg->clk);
+	n = readl(USB_OTGSC);
+	/* ID pull-up register */
+	writel(n | OTGSC_IDPU, USB_OTGSC);
+
+	msleep(100);
+	n = readl(USB_OTGSC);
+	USBH_INFO("=============htc_get_accessory_state otgsc = 0x%x\n",n);
+
+	if (n & OTGSC_ID)
+		ret =1;
+	else
+		ret = 0;
+
+	writel(n & ~OTGSC_IDPU, USB_OTGSC);
+	clk_disable(motg->clk);
+
+	pm_runtime_put_noidle(motg->otg.dev);
+	pm_runtime_put_sync_suspend(motg->otg.dev);
+	return ret;
+}
+
 static void send_usb_connect_notify(struct work_struct *w)
 {
 	static struct t_usb_status_notifier *notifier;
@@ -686,6 +723,55 @@ static int msm_otg_link_reset(struct msm_otg *motg)
 	writel_relaxed(0x0, USB_AHBBURST);
 	writel_relaxed(0x00, USB_AHBMODE);
 
+	return 0;
+}
+
+static int carkit_phy_reset(struct otg_transceiver *otg)
+{
+	struct msm_otg *motg = container_of(otg, struct msm_otg, otg);
+	struct msm_otg_platform_data *pdata = motg->pdata;
+	int ret;
+	u32 val = 0;
+	u32 ulpi_val = 0;
+	USBH_INFO("%s\n", __func__);
+
+	clk_enable(motg->clk);
+	if (motg->pdata->phy_reset)
+		ret = motg->pdata->phy_reset();
+	else
+		ret = msm_otg_phy_reset(motg);
+	if (ret) {
+		USBH_ERR("phy_reset failed\n");
+		return ret;
+	}
+
+	ret = msm_otg_link_reset(motg);
+	if (ret) {
+		dev_err(otg->dev, "link reset failed\n");
+		return ret;
+	}
+	msleep(100);
+
+	ulpi_init(motg);
+
+	/* Ensure that RESET operation is completed before turning off clock */
+	mb();
+
+	clk_disable(motg->clk);
+
+	if ((pdata->otg_control == OTG_PHY_CONTROL) || motg->pdata->phy_notify_enabled) {
+		val = readl_relaxed(USB_OTGSC);
+		if (pdata->mode == USB_OTG) {
+			ulpi_val = ULPI_INT_IDGRD | ULPI_INT_SESS_VALID;
+			val |= OTGSC_IDIE | OTGSC_BSVIE;
+		} else if (pdata->mode == USB_PERIPHERAL) {
+			ulpi_val = ULPI_INT_SESS_VALID;
+			val |= OTGSC_BSVIE;
+		}
+		writel_relaxed(val, USB_OTGSC);
+		ulpi_write(otg, ulpi_val, ULPI_USB_INT_EN_RISE);
+		ulpi_write(otg, ulpi_val, ULPI_USB_INT_EN_FALL);
+	}
 	return 0;
 }
 
@@ -2236,6 +2322,11 @@ static void usb_host_cable_detect(bool cable_in)
 		msm_otg_set_id_state(1);
 }
 #endif
+
+int msm_otg_get_vbus_state(void)
+{
+	return htc_otg_vbus;
+}
 
 void msm_otg_set_vbus_state(int online)
 {

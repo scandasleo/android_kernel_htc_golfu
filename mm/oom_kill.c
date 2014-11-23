@@ -577,7 +577,7 @@ void mem_cgroup_out_of_memory(struct mem_cgroup *mem, gfp_t gfp_mask, int order)
 	p = select_bad_process(&points, limit, mem, NULL, false);
 	if (p && PTR_ERR(p) != -1UL)
 	oom_kill_process(p, gfp_mask, order, points, limit, mem, NULL,
-				"Memory cgroup out of memory")
+				"Memory cgroup out of memory");
 	read_unlock(&tasklist_lock);
 }
 #endif

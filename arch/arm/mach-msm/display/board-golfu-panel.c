@@ -66,7 +66,7 @@ struct mdp_reg golfu_color_enhancement[] = {
 int golfu_mdp_color_enhancement(void)
 {
 	PR_DISP_INFO("%s\n",__func__);
-	mdp_color_enhancement(golfu_color_enhancement, ARRAY_SIZE(golfu_color_enhancement));
+//	mdp_color_enhancement(golfu_color_enhancement, ARRAY_SIZE(golfu_color_enhancement));
 	return 0;
 }
 
@@ -162,7 +162,7 @@ static unsigned char golfu_shrink_pwm(int val)
 }
 
 static struct msm_panel_common_pdata mipi_golfu_panel_data = {
-	.shrink_pwm = NULL,
+//	.shrink_pwm = NULL,
 };
 
 static struct platform_device mipi_dsi_cmd_hvga_panel_device = {
@@ -216,9 +216,10 @@ static struct platform_device msm_fb_device = {
 };
 
 static struct msm_panel_common_pdata mdp_pdata = {
+	.cont_splash_enabled = 0x00,
 	.gpio = 97,
 	.mdp_rev = MDP_REV_303,
-	.mdp_color_enhance = golfu_mdp_color_enhancement,
+	//.mdp_color_enhance = golfu_mdp_color_enhancement,
 };
 
 static void __init msm_fb_add_devices(void)
@@ -254,7 +255,7 @@ int __init golfu_init_panel(void)
 	PR_DISP_INFO("panel_type= 0x%x\n", panel_type);
 	PR_DISP_INFO("%s: %s\n", __func__, mipi_dsi_cmd_hvga_panel_device.name);
 
-	mipi_golfu_panel_data.shrink_pwm = golfu_shrink_pwm;
+//	mipi_golfu_panel_data.shrink_pwm = golfu_shrink_pwm;
 
 
 	ret = platform_device_register(&msm_fb_device);
