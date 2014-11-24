@@ -8,6 +8,14 @@
  * If you feel the need to add #include <linux/foo.h> to this file
  * then you are doing something wrong and should go away silently.
  */
+#include <linux/version.h>
+
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,1,0))
+ #include_next <linux/export.h>
+ #else
+ #include <linux/module.h>
+#endif
 
 /* Some toolchains use a `_' prefix for all user symbols. */
 #ifdef CONFIG_SYMBOL_PREFIX
@@ -16,11 +24,11 @@
 #define MODULE_SYMBOL_PREFIX ""
 #endif
 
-struct kernel_symbol
+/*struct kernel_symbol
 {
 	unsigned long value;
 	const char *name;
-};
+};*/
 
 #ifdef MODULE
 extern struct module __this_module;
