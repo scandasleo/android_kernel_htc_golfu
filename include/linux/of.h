@@ -196,7 +196,7 @@ extern struct property *of_find_property(const struct device_node *np,
 					 const char *name,
 					 int *lenp);
 extern int of_property_read_u32_array(const struct device_node *np,
-				      char *propname,
+				      const char *propname,
 				      u32 *out_values,
 				      size_t sz);
 
@@ -245,7 +245,7 @@ static inline bool of_have_populated_dt(void)
 	while (0)
 
 static inline int of_property_read_u32_array(const struct device_node *np,
-				char *propname, u32 *out_values, size_t sz)
+				const char *propname, u32 *out_values, size_t sz)
 {
 	return -ENOSYS;
 }
@@ -273,7 +273,7 @@ static inline struct device_node *of_parse_phandle(struct device_node *np,
 #endif /* CONFIG_OF */
 
 static inline int of_property_read_u32(const struct device_node *np,
-				       char *propname,
+				       const char *propname,
 				       u32 *out_value)
 {
 	return of_property_read_u32_array(np, propname, out_value, 1);
