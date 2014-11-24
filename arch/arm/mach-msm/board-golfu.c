@@ -1326,109 +1326,66 @@ static void golfu_camera_vreg_config(int vreg_en)
 		}
 	}
 
-	/* For XB board and later */
-	if(system_rev >= 0x1){
-		if (vreg_wlan1p2c50 == NULL) { //D1.5V from PMIC L6
-			vreg_wlan1p2c50 = vreg_get(NULL, "wlan3");
-			if (IS_ERR(vreg_wlan1p2c50)) {
-				pr_err("%s: vreg_get(%s) failed (%ld)\n",
-				__func__, "vreg_wlan1p2c50", PTR_ERR(vreg_wlan1p2c50));
-				return;
-			}
-
-			printk("camera_vreg_config: vreg_wlan1p2c50 1500\n");
-			rc = vreg_set_level(vreg_wlan1p2c50, 1500);
-			if (rc) {
-				pr_err("%s: vreg_wlan1p2c50 set_level failed (%d)\n",
-				__func__, rc);
-			}
+	if (vreg_wlan1p2c50 == NULL) { //D1.5V from PMIC L6
+		vreg_wlan1p2c50 = vreg_get(NULL, "wlan3");
+		if (IS_ERR(vreg_wlan1p2c50)) {
+			pr_err("%s: vreg_get(%s) failed (%ld)\n",
+			__func__, "vreg_wlan1p2c50", PTR_ERR(vreg_wlan1p2c50));
+			return;
 		}
-	}/* (system_rev >= 0x1) End*/
+
+		printk("camera_vreg_config: vreg_wlan1p2c50 1500\n");
+		rc = vreg_set_level(vreg_wlan1p2c50, 1500);
+		if (rc) {
+			pr_err("%s: vreg_wlan1p2c50 set_level failed (%d)\n",
+			__func__, rc);
+		}
+	}
 
 	if (vreg_en) {
-		if(system_rev >= 0x1){ /* for XB board with 5M and later*/
-			/* D1V5 for 5M 4e1 */
-			rc = vreg_enable(vreg_wlan1p2c50);
-			pr_info("vreg_wlan1p2c50 enable D1V5\n");
-			if (rc) {
-				pr_err("%s: vreg_wlan1p2c50 enable failed (%d)\n",
-				__func__, rc);
-			}
-			udelay(5);
+		/* D1V5 for 5M 4e1 */
+		rc = vreg_enable(vreg_wlan1p2c50);
+		pr_info("vreg_wlan1p2c50 enable D1V5\n");
+		if (rc) {
+			pr_err("%s: vreg_wlan1p2c50 enable failed (%d)\n",
+			__func__, rc);
+		}
+		udelay(5);
 
-			/* A2V85 */
-			gpio_set_value(GOLFU_GPIO_CAM_A2V85_EN, 1);
-			pr_info("enable A2V85\n");
-			udelay(5);
+		/* A2V85 */
+		gpio_set_value(GOLFU_GPIO_CAM_A2V85_EN, 1);
+		pr_info("enable A2V85\n");
+		udelay(5);
 
-			/* IO 1V8 */
-			rc = vreg_enable(vreg_usim2);
-			pr_info("vreg_usim2 enable IO 1V8\n");
-			if (rc) {
-				pr_err("%s: USIM enable failed (%d)\n",
-				__func__, rc);
-			}
-		}else{ /* for XA board with 3M */
-			/* IO 1V8 */
-			rc = vreg_enable(vreg_usim2);
-			pr_info("vreg_usim2 enable IO 1V8\n");
-			if (rc) {
-				pr_err("%s: USIM enable failed (%d)\n",
-					__func__, rc);
-			}
-			udelay(5);
-
-			/* D1V8 for 3M */
-			gpio_set_value(GOLFU_GPIO_CAM_D1V8_EN, 1);
-			pr_info("enable D1V8\n");
-			udelay(5);
-
-			/* A2V85 */
-			gpio_set_value(GOLFU_GPIO_CAM_A2V85_EN, 1);
-			pr_info("enable A2V85\n");
+		/* IO 1V8 */
+		rc = vreg_enable(vreg_usim2);
+		pr_info("vreg_usim2 enable IO 1V8\n");
+		if (rc) {
+			pr_err("%s: USIM enable failed (%d)\n",
+			__func__, rc);
 		}
 	} else {
-		if(system_rev >= 0x1){ /* for XB board with 5M and later */
-			/* IO 1V8 */
-			rc = vreg_disable(vreg_usim2);
-			if (rc) {
-				pr_err("%s: IO 1V8 disable failed (%d)\n",
-				__func__, rc);
-			}
-			pr_info("%s: IO 1V8 disable OK\n", __func__);
-			hr_msleep(5);
-
-			/* A2V85 */
-			gpio_set_value(GOLFU_GPIO_CAM_A2V85_EN, 0);
-			pr_info("disable A2V85\n");
-			hr_msleep(5);
-
-			/* D1V5 for XB board with 5M and later */
-			rc = vreg_disable(vreg_wlan1p2c50);
-			if (rc) {
-				pr_err("%s: D1V5 vreg_wlan1p2c50 disable failed (%d)\n",
-				__func__, rc);
-			}
-			pr_info("%s: D1V5 vreg_wlan1p2c50 disable OK\n", __func__);
-		}else{ /* for XA board with 3M */
-			/* A2V85 */
-			gpio_set_value(GOLFU_GPIO_CAM_A2V85_EN, 0);
-			pr_info("disable A2V85\n");
-			hr_msleep(5);
-
-			/* D1V8 */
-			gpio_set_value(GOLFU_GPIO_CAM_D1V8_EN, 0);
-			pr_info("disable D1V8\n");
-			hr_msleep(5);
-
-			/* IO 1V8 */
-			rc = vreg_disable(vreg_usim2);
-			if (rc) {
-				pr_err("%s: IO 1V8 disable failed (%d)\n",
-					__func__, rc);
-			}
-			pr_info("%s: IO 1V8 disable OK\n", __func__);
+		/* IO 1V8 */
+		rc = vreg_disable(vreg_usim2);
+		if (rc) {
+			pr_err("%s: IO 1V8 disable failed (%d)\n",
+			__func__, rc);
 		}
+		pr_info("%s: IO 1V8 disable OK\n", __func__);
+		hr_msleep(5);
+
+		/* A2V85 */
+		gpio_set_value(GOLFU_GPIO_CAM_A2V85_EN, 0);
+		pr_info("disable A2V85\n");
+		hr_msleep(5);
+
+		/* D1V5 for XB board with 5M and later */
+		rc = vreg_disable(vreg_wlan1p2c50);
+		if (rc) {
+			pr_err("%s: D1V5 vreg_wlan1p2c50 disable failed (%d)\n",
+			__func__, rc);
+		}
+		pr_info("%s: D1V5 vreg_wlan1p2c50 disable OK\n", __func__);
 	}
 }
 //HTC_END
@@ -1610,39 +1567,6 @@ struct msm_camera_device_platform_data golfu_camera_device_data_front = {
 	.ioext.appphy = MSM_CLK_CTL_PHYS,
 	.ioext.appsz  = MSM_CLK_CTL_SIZE,
 };
-/* HTC_START */
-#ifdef CONFIG_MT9T013
-static struct msm_camera_sensor_platform_info mt9t013_sensor_7627a_info = {
-	.mount_angle = 0
-};
-
-
-static struct msm_camera_sensor_flash_data flash_mt9t013 = {
-	.flash_type = MSM_CAMERA_FLASH_NONE,
-#ifdef CONFIG_MSM_CAMERA_FLASH
-	.flash_src  = &msm_flash_src
-#endif
-};
-
-static struct msm_camera_sensor_info msm_camera_sensor_mt9t013_data = {
-	.sensor_name    = "mt9t013",
-	.sensor_reset   = GOLFU_GPIO_CAMERA_RESET,
-	.sensor_pwd     = GOLFU_GPIO_CAMERA_STANDBY,
-	.mclk           = GOLFU_GPIO_CAMERA_MCLK,
-	.pdata          = &golfu_camera_device_data_rear,
-	.flash_data     = &flash_mt9t013,
-	.sensor_platform_info   = &mt9t013_sensor_7627a_info,
-	.csi_if         = 1
-};
-
-static struct platform_device msm_camera_sensor_mt9t013 = {
-	.name      = "msm_camera_mt9t013",
-	.dev       = {
-		.platform_data = &msm_camera_sensor_mt9t013_data,
-	},
-};
-#endif
-/*HTC_END */
 
 #ifdef CONFIG_S5K4E1
 static struct msm_camera_sensor_platform_info s5k4e1_sensor_7627a_info = {
@@ -1685,127 +1609,8 @@ static struct i2c_board_info i2c_camera_devices[] = {
 	},
 	#endif
 };
-
-#ifdef CONFIG_IMX072
-static struct msm_camera_sensor_platform_info imx072_sensor_7627a_info = {
-	.mount_angle = 90
-};
-
-static struct msm_camera_sensor_flash_data flash_imx072 = {
-	.flash_type             = MSM_CAMERA_FLASH_LED,
-	.flash_src              = &msm_flash_src
-};
-
-static struct msm_camera_sensor_info msm_camera_sensor_imx072_data = {
-	.sensor_name    = "imx072",
-	.sensor_reset_enable = 1,
-	.sensor_reset   = GPIO_CAM_GP_CAMIF_RESET_N, /* TODO 106,*/
-	.sensor_pwd             = 85,
-	.vcm_pwd                = GPIO_CAM_GP_CAM_PWDN,
-	.vcm_enable             = 1,
-	.pdata                  = &golfu_camera_device_data_rear,
-	.flash_data             = &flash_imx072,
-	.sensor_platform_info = &imx072_sensor_7627a_info,
-	.csi_if                 = 1
-};
-
-static struct platform_device msm_camera_sensor_imx072 = {
-	.name   = "msm_camera_imx072",
-	.dev    = {
-		.platform_data = &msm_camera_sensor_imx072_data,
-	},
-};
-#endif
-
-#ifdef CONFIG_WEBCAM_OV9726
-static struct msm_camera_sensor_platform_info ov9726_sensor_7627a_info = {
-	.mount_angle = 90
-};
-
-static struct msm_camera_sensor_flash_data flash_ov9726 = {
-	.flash_type             = MSM_CAMERA_FLASH_NONE,
-	.flash_src              = &msm_flash_src
-};
-static struct msm_camera_sensor_info msm_camera_sensor_ov9726_data;
-static struct msm_camera_sensor_info msm_camera_sensor_ov9726_data = {
-	.sensor_name    = "ov9726",
-	.sensor_reset_enable = 0,
-	.sensor_reset   = GPIO_CAM_GP_CAM1MP_XCLR,
-	.sensor_pwd             = 85,
-	.vcm_pwd                = 1,
-	.vcm_enable             = 0,
-	.pdata                  = &golfu_camera_device_data_front,
-	.flash_data             = &flash_ov9726,
-	.sensor_platform_info   = &ov9726_sensor_7627a_info,
-	.csi_if                 = 1
-};
-
-static struct platform_device msm_camera_sensor_ov9726 = {
-	.name   = "msm_camera_ov9726",
-	.dev    = {
-		.platform_data = &msm_camera_sensor_ov9726_data,
-	},
-};
-#else
-/*static inline void msm_camera_vreg_init(void) { }*/
-#endif
-
-#ifdef CONFIG_MT9E013
-static struct msm_camera_sensor_platform_info mt9e013_sensor_7627a_info = {
-	.mount_angle = 90
-};
-
-static struct msm_camera_sensor_flash_data flash_mt9e013 = {
-	.flash_type = MSM_CAMERA_FLASH_LED,
-	.flash_src  = &msm_flash_src
-};
-
-static struct msm_camera_sensor_info msm_camera_sensor_mt9e013_data = {
-	.sensor_name    = "mt9e013",
-	.sensor_reset   = 0,
-	.sensor_reset_enable = 1,
-	.sensor_pwd     = 85,
-	.vcm_pwd        = 1,
-	.vcm_enable     = 0,
-	.pdata          = &golfu_camera_device_data_rear,
-	.flash_data     = &flash_mt9e013,
-	.sensor_platform_info   = &mt9e013_sensor_7627a_info,
-	.csi_if         = 1
-};
-
-static struct platform_device msm_camera_sensor_mt9e013 = {
-	.name      = "msm_camera_mt9e013",
-	.dev       = {
-		.platform_data = &msm_camera_sensor_mt9e013_data,
-	},
-};
-#endif
-
-#if 0
-static struct i2c_board_info i2c_camera_3M_devices[] = {
-/* HTC_START */
-	#ifdef CONFIG_MT9T013
-	{
-		I2C_BOARD_INFO("mt9t013", 0x6C ),
-	},
-	#endif
-/* HTC_END */
-};
-
-static struct i2c_board_info i2c_camera_5M_devices[] = {
-	#ifdef CONFIG_S5K4E1
-	{
-		I2C_BOARD_INFO("s5k4e1", 0x20 >>1),
-	},
-/* for 5M FF s5k4e1 sensor
-	{
-		I2C_BOARD_INFO("s5k4e1_af", 0x18 >>1),
-	},
-*/
-	#endif
-};
-#endif
 #endif /* CONFIG_MSM_CAMERA define END */
+
 #if defined(CONFIG_SERIAL_MSM_HSL_CONSOLE) \
 		&& defined(CONFIG_MSM_SHARED_GPIO_FOR_UART2DM)
 static struct msm_gpio uart2dm_gpios[] = {
