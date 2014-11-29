@@ -1039,9 +1039,9 @@ static struct i2c_board_info i2c_aic3254_devices[] = {
 static struct snd_endpoint snd_endpoints_list[] = {
 	SND(HANDSET, 0),
 	SND(SPEAKER, 1),
-	SND(HEADSET,2),
+	SND(HEADSET, 2),
 	SND(BT, 3),
-	SND(CARKIT, 3),
+	SND(CARKIT, 4),
 	SND(TTY_FULL, 5),
 	SND(TTY_HEADSET, 5),
 	SND(TTY_VCO, 6),
@@ -1050,8 +1050,10 @@ static struct snd_endpoint snd_endpoints_list[] = {
 	SND(FM_HEADSET, 9),
 	SND(HEADSET_AND_SPEAKER, 10),
 	SND(STEREO_HEADSET_AND_SPEAKER, 10),
+	SND(FM_SPEAKER, 11),
 	SND(BT_EC_OFF, 44),
 	SND(CURRENT, 256),
+
 };
 #undef SND
 
@@ -1135,7 +1137,7 @@ static unsigned int dec_concurrency_table[] = {
 	(DEC4_FORMAT),
 
 	/* Concurrency 6 */
-	(DEC0_FORMAT|(1<<MSM_ADSP_MODE_NONTUNNEL)|(1<<MSM_ADSP_OP_DM)),
+	(DEC0_FORMAT|(1<<MSM_ADSP_MODE_TUNNEL)|(1<<MSM_ADSP_MODE_NONTUNNEL)|(1<<MSM_ADSP_OP_DM)),
 	0, 0, 0, 0,
 
 	/* Concurrency 7 */
