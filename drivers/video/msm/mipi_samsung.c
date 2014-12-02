@@ -57,7 +57,6 @@ static char led_pwm3[] =
 };*/
 
 static unsigned char bkl_enable_cmds[] = {0x53, 0x24};/* DTYPE_DCS_WRITE1 */
-static unsigned char bkl_disable_cmds[] = {0x53, 0x00};/* DTYPE_DCS_WRITE1 */
 static unsigned char bkl_cabc_cmds[] = {0x55, 0x00};/* DTYPE_DCS_WRITE1 */
 
 static char sw_reset[2] = {0x01, 0x00}; /* DTYPE_DCS_WRITE */
@@ -400,11 +399,6 @@ static struct dsi_cmd_desc samsung_cmd_backlight_cmds[] = {
 		sizeof(led_pwm1), led_pwm1},
 };
 
-static struct dsi_cmd_desc samsung_display_on_cmds[] = {
-	{DTYPE_DCS_WRITE, 1, 0, 0, 0,
-		sizeof(display_on), display_on},
-};
-
 void mipi_samsung_panel_type_detect(struct mipi_panel_info *mipi)
 {
 	if (panel_type == PANEL_ID_PIO_SAMSUNG) {
@@ -443,7 +437,6 @@ static int mipi_samsung_lcd_on(struct platform_device *pdev)
 	struct msm_fb_data_type *mfd;
 	struct msm_fb_panel_data *pdata = NULL;
 	struct mipi_panel_info *mipi;
-	struct dcs_cmd_req cmdreq;
 
 	mfd = platform_get_drvdata(pdev);
 	if (!mfd)
@@ -481,7 +474,6 @@ static int mipi_samsung_lcd_on(struct platform_device *pdev)
 static int mipi_samsung_lcd_off(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd;
-	struct dcs_cmd_req cmdreq;
 
 	PR_DISP_INFO("%s\n", __func__);
 
@@ -507,8 +499,6 @@ static int mipi_samsung_lcd_off(struct platform_device *pdev)
 
 static void mipi_samsung_set_backlight(struct msm_fb_data_type *mfd)
 {
-	struct dcs_cmd_req cmdreq;
-
 	if (mipi_samsung_pdata &&
 	    mipi_samsung_pdata->gpio_set_backlight) {
 		mipi_samsung_pdata->gpio_set_backlight(mfd->bl_level);
@@ -539,7 +529,6 @@ static int __devinit mipi_samsung_lcd_probe(struct platform_device *pdev)
 	struct mipi_panel_info *mipi;
 	struct platform_device *current_pdev;
 	static struct mipi_dsi_phy_ctrl *phy_settings;
-	static char dlane_swap;
 
 	if (pdev->id == 0) {
 		mipi_samsung_pdata = pdev->dev.platform_data;

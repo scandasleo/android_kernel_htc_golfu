@@ -139,27 +139,6 @@ static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 #define PWM_ORISE_DEF		117
 #define PWM_ORISE_MIN		7
 #define PWM_ORISE_MAX		255
-static unsigned char golfu_shrink_pwm(int val)
-{
-	unsigned char shrink_br = BRI_SETTING_MAX;
-
-	if (val <= 0) {
-		shrink_br = 0;
-	} else if (val > 0 && (val < BRI_SETTING_MIN)) {
-			shrink_br = PWM_ORISE_MIN;
-	} else if ((val >= BRI_SETTING_MIN) && (val <= BRI_SETTING_DEF)) {
-			shrink_br = (val - BRI_SETTING_MIN) * (PWM_ORISE_DEF - PWM_ORISE_MIN) /
-		(BRI_SETTING_DEF - BRI_SETTING_MIN) + PWM_ORISE_MIN;
-	} else if (val > BRI_SETTING_DEF && val <= BRI_SETTING_MAX) {
-			shrink_br = (val - BRI_SETTING_DEF) * (PWM_ORISE_MAX - PWM_ORISE_DEF) /
-		(BRI_SETTING_MAX - BRI_SETTING_DEF) + PWM_ORISE_DEF;
-	} else if (val > BRI_SETTING_MAX)
-			shrink_br = PWM_ORISE_MAX;
-
-	/*PR_DISP_INFO("brightness orig=%d, transformed=%d\n", val, shrink_br);*/
-
-	return shrink_br;
-}
 
 static struct msm_panel_common_pdata mipi_golfu_panel_data = {
 //	.shrink_pwm = NULL,

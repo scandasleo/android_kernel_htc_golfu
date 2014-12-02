@@ -23,6 +23,11 @@ struct kref {
 	atomic_t refcount;
 };
 
+void kref_init(struct kref *kref);
+void kref_get(struct kref *kref);
+int kref_put(struct kref *kref, void (*release) (struct kref *kref));
+int kref_sub(struct kref *kref, unsigned int count,
+	     void (*release) (struct kref *kref));
 /**
  * kref_get_unless_zero - Increment refcount for object unless it is zero.
  * @kref: object.
