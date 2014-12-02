@@ -15,8 +15,6 @@
  * 02110-1301, USA.
  *
  */
-
-#include <linux/workqueue.h>
 #include <mach/panel_id.h>
 #include <mach/htc_battery_common.h>
 #include "msm_fb.h"
@@ -42,20 +40,14 @@ static struct mipi_dsi_panel_platform_data *mipi_orise_pdata;
 
 static struct dsi_buf orise_tx_buf;
 static struct dsi_buf orise_rx_buf;
-
-static int golfu_pwm_freq_22k = 1;
-
-static struct workqueue_struct *golfu_backlight_wq;
-static struct delayed_work golfu_backlight_work;
-static struct msm_fb_data_type *golfu_mfd;
+static int mipi_orise_lcd_init(void);
 
 // -----------------------------------------------------------------------------
-//                             Constant value define
+//                             /* Golfu panel initial settings */
 // -----------------------------------------------------------------------------
 static unsigned char led_pwm1[] = { 0x51, 0xf0 }; /* DTYPE_DCS_WRITE1 */ //PWM
 
 static unsigned char bkl_enable_cmds[] = { 0x53, 0x24 };/* DTYPE_DCS_WRITE1 */ //bkl on and no dim
-static unsigned char bkl_disable_cmds[] = { 0x53, 0x00 };/* DTYPE_DCS_WRITE1 */ //bkl off
 
 static char all_pixel_off[] = { 0x22, 0x00 }; /* DTYPE_DCS_WRITE */
 static char normal_display_mode_on[] = { 0x13, 0x00 }; /* DTYPE_DCS_WRITE */
@@ -88,7 +80,6 @@ static unsigned char golfu_auo_orise_c2_010[] = { 0xc6, 0x12 }; /* DTYPE_DCS_WRI
 static unsigned char golfu_auo_orise_c3_010[] = { 0xc6, 0x12 }; /* DTYPE_DCS_WRITE1 */
 static unsigned char golfu_auo_orise_011[] = { 0x00, 0xb1 }; /* DTYPE_DCS_WRITE1 */
 static unsigned char golfu_auo_orise_012[] = { 0xc6, 0x05 }; /* DTYPE_DCS_WRITE1 PWM Freq=22 kHz*/
-static unsigned char golfu_auo_orise_012_8k[] = { 0xc6, 0x10 }; /* DTYPE_DCS_WRITE1 PWM Freq= 8kHz*/
 static unsigned char golfu_auo_orise_013[] = { 0x00, 0xb1 }; /* DTYPE_DCS_WRITE1 */
 static unsigned char golfu_auo_orise_014[] = { 0xc5, 0x10 }; /* DTYPE_DCS_WRITE1 */
 /*----------flicker-----------------*/
@@ -592,58 +583,6 @@ static struct dsi_cmd_desc orise_display_off_cmds[] = {
 	{ DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_036), golfu_auo_orise_036 },
 };
 
-static struct dsi_cmd_desc orise_pwm_freq_8k_cmds[] = {
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_001), golfu_auo_orise_001},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_002), golfu_auo_orise_002},
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_003), golfu_auo_orise_003},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_009), golfu_auo_orise_009},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_c2_010), golfu_auo_orise_c2_010},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_011), golfu_auo_orise_011},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_012_8k), golfu_auo_orise_012_8k}, /* PWM Freq=8 kHz*/
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_033), golfu_auo_orise_033},
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_034), golfu_auo_orise_034},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_035), golfu_auo_orise_035},
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_036), golfu_auo_orise_036},
-};
-
-static struct dsi_cmd_desc orise_pwm_freq_22k_cmds[] = {
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_001), golfu_auo_orise_001},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_002), golfu_auo_orise_002},
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_003), golfu_auo_orise_003},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_009), golfu_auo_orise_009},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_c2_010), golfu_auo_orise_c2_010},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_011), golfu_auo_orise_011},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_012), golfu_auo_orise_012}, /* PWM Freq=22 kHz*/
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_033), golfu_auo_orise_033},
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_034), golfu_auo_orise_034},
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(golfu_auo_orise_035), golfu_auo_orise_035},
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(golfu_auo_orise_036), golfu_auo_orise_036},
-};
-
-//static char manufacture_id[2] = {0x04, 0x00}; /* DTYPE_DCS_READ */
-/*
- static struct dsi_cmd_desc novatek_manufacture_id_cmd = {
- DTYPE_DCS_READ, 1, 0, 1, 5, sizeof(manufacture_id), manufacture_id};
-
- static uint32 mipi_novatek_manufacture_id(struct msm_fb_data_type *mfd)
- {
- struct dsi_buf *rp, *tp;
- struct dsi_cmd_desc *cmd;
- uint32 *lp;
-
- tp = &novatek_tx_buf;
- rp = &novatek_rx_buf;
- mipi_dsi_buf_init(rp);
- mipi_dsi_buf_init(tp);
-
- cmd = &novatek_manufacture_id_cmd;
- mipi_dsi_cmds_rx(mfd, tp, rp, cmd, 3);
- lp = (uint32 *)rp->data;
- PR_DISP_INFO("%s: manufacture_id=%x\n", __func__, *lp);
- return *lp;
- }
- */
-
 static int fpga_addr;
 static bool support_3d;
 
@@ -683,18 +622,6 @@ static void mipi_dsi_enable_3d_barrier(int mode) {
 static struct dsi_cmd_desc orise_cmd_backlight_cmds[] = {
 /* VIDEO mode need use LWRITE to send cmd */
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0, sizeof(led_pwm1), led_pwm1},
-};
-
-static struct dsi_cmd_desc orise_display_on_cmds[] = {
-	{DTYPE_DCS_WRITE, 1, 0, 0, 0, sizeof(display_on), display_on},
-};
-
-static struct dsi_cmd_desc orise_bkl_enable_cmds[] = {
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(bkl_enable_cmds), bkl_enable_cmds},
-};
-
-static struct dsi_cmd_desc orise_bkl_disable_cmds[] = {
-	{DTYPE_DCS_WRITE1, 1, 0, 0, 0, sizeof(bkl_disable_cmds), bkl_disable_cmds},
 };
 
 void mipi_orise_panel_type_detect(struct mipi_panel_info *mipi) {
@@ -761,124 +688,22 @@ void mipi_orise_panel_type_detect(struct mipi_panel_info *mipi) {
 	return;
 }
 
-static void mipi_orise_set_backlight(struct msm_fb_data_type *mfd) {
-
-	struct mipi_panel_info *mipi;
-
-	mipi = &mfd->panel_info.mipi;
-	
-	if (mipi_status == 0)
-		goto end;
-
-	led_pwm1[1] = (unsigned char) (mfd->bl_level);
-
-	if (mfd->bl_level == 0 || board_mfg_mode() == 4
-			|| (board_mfg_mode() == 5 && !(htc_battery_get_zcharge_mode() % 2))) {
-		led_pwm1[1] = 0;
+static void mipi_orise_set_backlight(struct msm_fb_data_type *mfd)
+{
+	if (mipi_orise_pdata &&
+	    mipi_orise_pdata->gpio_set_backlight) {
+		mipi_orise_pdata->gpio_set_backlight(mfd->bl_level);
+		return;
 	}
 
-	if (mipi->mode == DSI_VIDEO_MODE) {
-		mipi_dsi_cmds_tx(&orise_tx_buf, orise_cmd_backlight_cmds,
-				ARRAY_SIZE(orise_cmd_backlight_cmds));
-	} else {
-		mipi_dsi_op_mode_config(DSI_CMD_MODE);
+	led_pwm1[1] = (unsigned char)mfd->bl_level;
 
-		/* Dynamic change the pwm freq. to avoid affecting the audio */
-		if (panel_type == PANEL_ID_GOLFU_AUO_C2 || panel_type == PANEL_ID_GOLFU_AUO_C3 || panel_type == PANEL_ID_GOLFU_AUO_C4) {
-			if (mfd->bl_level <= 37 && golfu_pwm_freq_22k == 1) {
-				mipi_dsi_cmds_tx(&orise_tx_buf, orise_pwm_freq_8k_cmds,
-							ARRAY_SIZE(orise_pwm_freq_8k_cmds));
-				golfu_pwm_freq_22k = 0;
-				PR_DISP_DEBUG("[DISP] backlight setting PWM Freq 8k\n");
-			} else if (mfd->bl_level > 37 && golfu_pwm_freq_22k == 0){
-				mipi_dsi_cmds_tx(&orise_tx_buf, orise_pwm_freq_22k_cmds,
-							ARRAY_SIZE(orise_pwm_freq_22k_cmds));
-				golfu_pwm_freq_22k = 1;
-				PR_DISP_DEBUG("[DISP] backlight setting PWM Freq 22k\n");
-			}
-		}
-
-		mipi_dsi_cmds_tx(&orise_tx_buf, orise_cmd_backlight_cmds,
-				ARRAY_SIZE(orise_cmd_backlight_cmds));
-	}
-
-	if (led_pwm1[1] != 0)
-		bl_level_prevset = mfd->bl_level;
-
+	mipi_dsi_cmds_tx(&orise_tx_buf, orise_cmd_backlight_cmds,
+			ARRAY_SIZE(orise_cmd_backlight_cmds));
+				
 	PR_DISP_DEBUG("mipi_dsi_set_backlight > set brightness to %d\n", led_pwm1[1]);
 
-	end: return;
-}
-
-static void golfu_turn_on_backlight(struct work_struct *w)
-{
-	mipi_orise_set_backlight(golfu_mfd);
-}
-
-static void mipi_orise_display_on(struct msm_fb_data_type *mfd) {
-	struct mipi_panel_info *mipi;
-	mipi = &mfd->panel_info.mipi;
-
-	PR_DISP_DEBUG("%s+\n", __func__);
-
-	if (mipi->mode == DSI_CMD_MODE) {
-		htc_mdp_sem_down(current, &mfd->dma->mutex);
-		mipi_dsi_op_mode_config(DSI_CMD_MODE);
-		mipi_dsi_cmds_tx(&orise_tx_buf, orise_display_on_cmds,
-				ARRAY_SIZE(orise_display_on_cmds));
-		htc_mdp_sem_up(&mfd->dma->mutex);
-	}
-}
-
-static void mipi_orise_bkl_switch(struct msm_fb_data_type *mfd, bool on) {
-	unsigned int val = 0;
-
-	if (on) {
-		mipi_status = 1;
-		val = mfd->bl_level;
-		if (val == 0) {
-			if (bl_level_prevset != 0) {
-				val = bl_level_prevset;
-				mfd->bl_level = val;
-			} else {
-				val = DEFAULT_BRIGHTNESS;
-				mfd->bl_level = val;
-			}
-		}
-		/*
-		 * postpone brightness setting when cable exists which means ready to onchg mode,
-		 * it can avoid the resume flash screen problem before onchg mode
-		 */
-		if(htc_is_cable_in()) {
-			golfu_mfd = mfd;
-			queue_delayed_work(golfu_backlight_wq, &golfu_backlight_work, 50);
-		} else {
-			mipi_orise_set_backlight(mfd);
-		}
-	} else {
-		mipi_status = 0;
-	}
-}
-
-static void mipi_orise_bkl_ctrl(struct msm_fb_data_type *mfd, bool on) {
-	struct mipi_panel_info *mipi;
-	mipi = &mfd->panel_info.mipi;
-
-	PR_DISP_DEBUG("mipi_orise_bkl_ctrl > on = %x\n",on);
-
-	if (mipi->mode == DSI_CMD_MODE) {
-		htc_mdp_sem_down(current, &mfd->dma->mutex);
-		if (on) {
-			mipi_dsi_op_mode_config(DSI_CMD_MODE);
-			mipi_dsi_cmds_tx(&orise_tx_buf, orise_bkl_enable_cmds,
-					ARRAY_SIZE(orise_bkl_enable_cmds));
-		} else {
-			mipi_dsi_op_mode_config(DSI_CMD_MODE);
-			mipi_dsi_cmds_tx(&orise_tx_buf, orise_bkl_disable_cmds,
-					ARRAY_SIZE(orise_bkl_disable_cmds));
-		}
-		htc_mdp_sem_up(&mfd->dma->mutex);
-	}
+	return;
 }
 
 static int mipi_orise_lcd_on(struct platform_device *pdev) {
@@ -898,29 +723,20 @@ static int mipi_orise_lcd_on(struct platform_device *pdev) {
 	
 	if (strlen(ptype) <= 13) {
 		printk("Display On - 1st time\n");
-
 		mipi_orise_panel_type_detect(mipi);
-
-		if (panel_type == PANEL_ID_PRIMODS_SHARP || panel_type == PANEL_ID_PRIMODS_SHARP_C1 ||
-			panel_type == PANEL_ID_PRIMODD_SHARP || panel_type == PANEL_ID_PRIMODD_SHARP_C1)
-			mipi_dsi_cmds_tx(&orise_tx_buf, mipi_power_on_cmd,
-					mipi_power_on_cmd_size);
-
 	} else {
 		PR_DISP_DEBUG("Display On \n");
 		if (panel_type != PANEL_ID_NONE) {
 			PR_DISP_INFO("%s\n", ptype);
 			mipi_dsi_cmds_tx(&orise_tx_buf, mipi_power_on_cmd,
 					mipi_power_on_cmd_size);
-
-			/* Initialize the flag for golfu pwm freq. check */
-			golfu_pwm_freq_22k = 1;
 		} else {
 			printk(KERN_ERR "panel_type=0x%x not support at power on\n", panel_type);
 			return -EINVAL;
 		}
-	} PR_DISP_DEBUG("Init done!\n");
-
+	} 
+	
+	PR_DISP_INFO("Init done!\n");
 	return 0;
 }
 
@@ -930,9 +746,6 @@ static int mipi_orise_lcd_off(struct platform_device *pdev) {
 	PR_DISP_INFO("%s\n", __func__);
 
 	mfd = platform_get_drvdata(pdev);
-
-	/* stop running backlight delay work */
-	cancel_delayed_work_sync(&golfu_backlight_work);
 
 	if (!mfd)
 		return -ENODEV;
@@ -944,7 +757,7 @@ static int mipi_orise_lcd_off(struct platform_device *pdev) {
 		mipi_dsi_cmds_tx(&orise_tx_buf, mipi_power_off_cmd,
 				mipi_power_off_cmd_size);
 	} else
-	printk(KERN_ERR "panel_type=0x%x not support at power off\n",
+		printk(KERN_ERR "panel_type=0x%x not support at power off\n",
 			panel_type);
 
 	return 0;
@@ -972,9 +785,20 @@ int mipi_orise_lcd_pre_off(struct platform_device *pdev) {
 static int mipi_dsi_3d_barrier_sysfs_register(struct device *dev);
 static int barrier_mode;
 
-static int mipi_orise_lcd_probe(struct platform_device *pdev) {
+static int mipi_orise_lcd_probe(struct platform_device *pdev)
+{
+	struct msm_fb_data_type *mfd;
+	struct mipi_panel_info *mipi;
+	struct platform_device *current_pdev;
+	static struct mipi_dsi_phy_ctrl *phy_settings;
+		
 	if (pdev->id == 0) {
 		mipi_orise_pdata = pdev->dev.platform_data;
+
+		if (mipi_orise_pdata
+			&& mipi_orise_pdata->phy_ctrl_settings) {
+			phy_settings = (mipi_orise_pdata->phy_ctrl_settings);
+		}
 
 		if (mipi_orise_pdata && mipi_orise_pdata->fpga_3d_config_addr)
 			mipi_orise_3d_init(mipi_orise_pdata->fpga_3d_config_addr);
@@ -986,14 +810,23 @@ static int mipi_orise_lcd_probe(struct platform_device *pdev) {
 		}
 		barrier_mode = 0;
 
-		golfu_backlight_wq = alloc_ordered_workqueue("backlight_wq", 0);
-		INIT_DELAYED_WORK(&(golfu_backlight_work), golfu_turn_on_backlight);
-
 		return 0;
 	}
 
-	msm_fb_add_device(pdev);
+	current_pdev = msm_fb_add_device(pdev);
 
+	if (current_pdev) {
+		mfd = platform_get_drvdata(current_pdev);
+		if (!mfd)
+			return -ENODEV;
+		if (mfd->key != MFD_KEY)
+			return -EINVAL;
+
+		mipi  = &mfd->panel_info.mipi;
+
+		if (phy_settings != NULL)
+			mipi->dsi_phy_db = phy_settings;
+	}
 	return 0;
 }
 
@@ -1074,6 +907,12 @@ int mipi_orise_device_register(struct msm_panel_info *pinfo, u32 channel,
 
 	ch_used[channel] = TRUE;
 
+	ret = mipi_orise_lcd_init();
+	if (ret) {
+		pr_err("mipi_novatek_lcd_init() failed with ret %u\n", ret);
+		return ret;
+	}
+	
 	pdev = platform_device_alloc("mipi_orise", (panel << 8) | channel);
 	if (!pdev)
 		return -ENOMEM;
@@ -1101,12 +940,10 @@ int mipi_orise_device_register(struct msm_panel_info *pinfo, u32 channel,
 	return ret;
 }
 
-static int __init mipi_orise_lcd_init(void)
+static int mipi_orise_lcd_init(void)
 {
 	mipi_dsi_buf_alloc(&orise_tx_buf, DSI_BUF_SIZE);
 	mipi_dsi_buf_alloc(&orise_rx_buf, DSI_BUF_SIZE);
 
 	return platform_driver_register(&this_driver);
 }
-
-module_init(mipi_orise_lcd_init);
