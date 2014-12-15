@@ -4189,4 +4189,3 @@ MODULE_VERSION(DRIVER_VERSION);
 
 module_init(radio_module_init);
 module_exit(radio_module_exit);
-
