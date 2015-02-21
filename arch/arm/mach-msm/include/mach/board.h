@@ -464,17 +464,17 @@ enum msm_mdp_hw_revision {
 struct msm_panel_common_pdata {
 	uintptr_t hw_revision_addr;
 	int gpio;
-	bool bl_lock;
-	spinlock_t bl_spinlock;
 	int (*backlight_level)(int level, int max, int min);
 	int (*pmic_backlight)(int level);
-	int (*rotate_panel)(void);
-	int (*backlight) (int level, int mode);
 	int (*panel_num)(void);
 	void (*panel_config_gpio)(int);
 	int (*vga_switch)(int select_vga);
 	int *gpio_num;
-	u32 mdp_max_clk;
+	int mdp_core_clk_rate;
+	unsigned num_mdp_clk;
+	int *mdp_core_clk_table;
+	int (*rgb_format)(void);
+	unsigned char (*shrink_pwm)(int val);
 #ifdef CONFIG_MSM_BUS_SCALING
 	struct msm_bus_scale_pdata *mdp_bus_scale_table;
 #endif
@@ -482,19 +482,20 @@ struct msm_panel_common_pdata {
 	u32 ov0_wb_size;  /* overlay0 writeback size */
 	u32 ov1_wb_size;  /* overlay1 writeback size */
 	u32 mem_hid;
-	char cont_splash_enabled;
-	u32 splash_screen_addr;
-	u32 splash_screen_size;
-	char mdp_iommu_split_domain;
-        u32 avtimer_phy;
-};
-
-struct lcdc_platform_data {
-	int (*lcdc_gpio_config)(int on);
-	int (*lcdc_power_save)(int);
-	unsigned int (*lcdc_get_clk)(void);
-#ifdef CONFIG_MSM_BUS_SCALING
-	struct msm_bus_scale_pdata *bus_scale_table;
+	int (*writeback_offset)(void);
+	int (*mdp_color_enhance)(void);
+	int (*mdp_gamma)(void);
+	void (*mdp_img_stick_wa)(bool);
+	unsigned long update_interval;
+	atomic_t img_stick_on;
+	struct panel_dcr_info *dcr_panel_pinfo;
+	unsigned int auto_bkl_stat;
+	int (*bkl_enable)(int);
+#ifdef CONFIG_FB_MSM8960
+	int (*acl_enable)(int);
+#else
+	int fpga_3d_config_addr;
+	struct gamma_curvy *abl_gamma_tbl;
 #endif
 };
 
@@ -526,6 +527,7 @@ enum mipi_dsi_3d_ctrl {
 	FPGA_SPI_INTF,
 };
 
+#if defined(CONFIG_FB_MSM8960) || (!defined(CONFIG_ARCH_MSM8X60) && !defined(CONFIG_ARCH_MSM7X27A))
 /* DSI PHY configuration */
 struct mipi_dsi_phy_ctrl {
 	uint32_t regulator[5];
@@ -534,6 +536,7 @@ struct mipi_dsi_phy_ctrl {
 	uint32_t strength[4];
 	uint32_t pll[21];
 };
+#endif
 
 struct mipi_dsi_panel_platform_data {
 	int fpga_ctrl_mode;
@@ -546,8 +549,6 @@ struct mipi_dsi_panel_platform_data {
 	void (*gpio_set_backlight)(int bl_level);
 };
 
-
-#define PANEL_NAME_MAX_LEN 50
 struct msm_fb_platform_data {
 	int (*detect_client)(const char *name);
 	int mddi_prescan;
@@ -557,8 +558,6 @@ struct msm_fb_platform_data {
 	uint32_t height;
 	bool     is_3d_panel;
 	unsigned char ext_resolution;
-	char prim_panel_name[PANEL_NAME_MAX_LEN];
-	char ext_panel_name[PANEL_NAME_MAX_LEN];
 };
 
 #ifdef CONFIG_FB_MSM8960
