@@ -1715,7 +1715,7 @@ early_param("pmem_adsp_size", pmem_adsp_size_setup);
 
 #ifdef CONFIG_ION_MSM
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-#define MSM_ION_HEAP_NUM        3
+#define MSM_ION_HEAP_NUM        4
 #else
 #define MSM_ION_HEAP_NUM        1
 #endif
@@ -1729,6 +1729,10 @@ static struct ion_co_heap_pdata co_ion_pdata = {
 	.align = PAGE_SIZE,
 };
 
+/**
+ * These heaps are listed in the order they will be allocated.
+ * Don't swap the order unless you know what you are doing!
+ */
 static struct ion_platform_heap golfu_heaps[] = {
 		{
 			.id	= ION_SYSTEM_HEAP_ID,
@@ -1736,6 +1740,13 @@ static struct ion_platform_heap golfu_heaps[] = {
 			.name	= ION_VMALLOC_HEAP_NAME,
 		},
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+		{
+			.id	= ION_CAMERA_HEAP_ID,
+			.type	= ION_HEAP_TYPE_CARVEOUT,
+			.name	= ION_CAMERA_HEAP_NAME,
+			.memory_type = ION_EBI_TYPE,
+			.extra_data = (void *)&co_ion_pdata,
+		},
 		{
 			.id	= ION_AUDIO_HEAP_ID,
 			.type	= ION_HEAP_TYPE_CARVEOUT,
@@ -1764,7 +1775,6 @@ static struct platform_device ion_dev = {
 	.id = 1,
 	.dev = { .platform_data = &ion_pdata },
 };
-
 #endif
 
 static struct memtype_reserve msm7x27a_reserve_table[] __initdata = {
@@ -1780,24 +1790,33 @@ static struct memtype_reserve msm7x27a_reserve_table[] __initdata = {
 
 static void __init size_pmem_devices(void)
 {
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
 	android_pmem_adsp_pdata.size = pmem_adsp_size;
+#endif
 }
+
 static void __init size_ion_devices(void)
 {
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-	ion_pdata.heaps[1].size = MSM_ION_AUDIO_SIZE;
-	ion_pdata.heaps[2].size = MSM_ION_SF_SIZE;
+	ion_pdata.heaps[1].size = MSM_PMEM_ADSP_SIZE;
+	ion_pdata.heaps[2].size = MSM_ION_AUDIO_SIZE;
+	ion_pdata.heaps[3].size = MSM_ION_SF_SIZE;
 #endif
 }
+
 static void __init reserve_pmem_memory(void) {
+#ifndef CONFIG_MSM_MULTIMEDIA_USE_ION
 	msm7x27a_reserve_table[MEMTYPE_EBI1].size += pmem_adsp_size;
+#endif
 }
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+
 static void __init reserve_ion_memory(void) {
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
+	msm7x27a_reserve_table[MEMTYPE_EBI1].size += MSM_PMEM_ADSP_SIZE;
 	msm7x27a_reserve_table[MEMTYPE_EBI1].size += MSM_ION_AUDIO_SIZE;
 	msm7x27a_reserve_table[MEMTYPE_EBI1].size += MSM_ION_SF_SIZE;
-}
 #endif
+}
 
 static void __init msm7x27a_calculate_reserve_sizes(void)
 {
