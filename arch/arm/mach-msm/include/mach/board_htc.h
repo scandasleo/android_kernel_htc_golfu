@@ -79,6 +79,19 @@ enum {
 	KERNEL_FLAG_GPIO_DUMP = BIT(31),
 };
 
+enum {
+	MFG_MODE_NORMAL,
+	MFG_MODE_FACTORY2,
+	MFG_MODE_RECOVERY,
+	MFG_MODE_CHARGE,
+	MFG_MODE_POWER_TEST,
+	MFG_MODE_OFFMODE_CHARGING,
+	MFG_MODE_MFGKERNEL_DIAG58,
+	MFG_MODE_GIFT_MODE,
+	MFG_MODE_MFGKERNEL,
+	MFG_MODE_MINI,
+};
+
 /* common init routines for use by arch/arm/mach-msm/board-*.c */
 
 void __init msm_add_usb_devices(void (*phy_reset) (void));

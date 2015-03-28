@@ -101,6 +101,19 @@ static int __init parse_tag_als_calibration(const struct tag *tag)
 
 __tagtable(ATAG_ALS, parse_tag_als_calibration);
 
+#define ATAG_WS		0x54410023
+
+unsigned int ws_kadc;
+EXPORT_SYMBOL(ws_kadc);
+static int __init parse_tag_ws_calibration(const struct tag *tag)
+{
+	ws_kadc = tag->u.als_kadc.kadc;
+
+	return 0;
+}
+
+__tagtable(ATAG_WS, parse_tag_ws_calibration);
+
 #define ATAG_MEMSIZE 0x5441001e
 unsigned memory_size;
 int __init parse_tag_memsize(const struct tag *tags)
@@ -305,6 +318,7 @@ char *board_get_mfg_sleep_gpio_table(void)
 	return mfg_gpio_table;
 }
 EXPORT_SYMBOL(board_get_mfg_sleep_gpio_table);
+
 static int mfg_mode;
 int __init board_mfg_mode_init(char *s)
 {
@@ -330,12 +344,10 @@ int __init board_mfg_mode_init(char *s)
 }
 __setup("androidboot.mode=", board_mfg_mode_init);
 
-
 int board_mfg_mode(void)
 {
 	return mfg_mode;
 }
-
 EXPORT_SYMBOL(board_mfg_mode);
 
 static int build_flag;
@@ -380,7 +392,6 @@ int board_build_flag(void)
 {
 	return build_flag;
 }
-
 EXPORT_SYMBOL(board_build_flag);
 
 /* ISL29028 ID values */
