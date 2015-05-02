@@ -1009,6 +1009,7 @@ static struct cm3629_platform_data cm36282_pdata = {
                         CM3629_PS2_INT_DIS | CM3629_PS1_INT_DIS,
     .ps_conf3_val = CM3629_PS2_PROL_32,
 //   .enable_polling_ignore = 1, -sweep2wake
+    .dynamical_threshold = 1,
 	.mapping_table = cm3629_mapping_table,
 	.mapping_size = ARRAY_SIZE(cm3629_mapping_table),
 };
@@ -1981,6 +1982,7 @@ static struct synaptics_i2c_rmi_platform_data golfu_ts_synaptics_data[] = { /* S
 		.report_type = SYN_AND_REPORT_TYPE_B,
 		.reduce_report_level = {30, 30, 50, 0, 0},
 		.customer_register = {0xF9, 0x64, 0x04, 0x64},
+		.multitouch_calibration = 1,
 		.config = {0x47, 0x4F, 0x46, 0x43, 0x00, 0x3F, 0x03, 0x1E,
 			0x05, 0xB1, 0x09, 0x0B, 0x05, 0x05, 0x00, 0x00,
 			0x4C, 0x04, 0x6C, 0x07, 0x28, 0x05, 0x2D, 0x80,
